@@ -17,5 +17,5 @@ quadletPipeline(
             podmanSecretFileName: 'esphome_secrets_yaml'
         ]
     ],
-    stagingExclusions: ['/images/', 'Jenkinsfile', 'LICENSE', 'README.md', 'renovate.json']
+    additionalStagingExclusions: ['/images/']
 )
