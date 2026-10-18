@@ -2,5 +2,5 @@ web_server:
   version: 3
   port: 80
   auth:
-    username: !secret otauser
-    password: !secret otapass
+    username: !secret webserver_user
+    password: !secret webserver_pass
