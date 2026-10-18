@@ -2,18 +2,20 @@
 
 boolean disableIndexTriggers = env.BRANCH_NAME != 'main'
 
-dockerComposePipeline(
+quadletPipeline(
     disableIndexTriggers: disableIndexTriggers,
-    envFileCredentialIds: ["common.env", "ESPHomeConfig.env"],
-    persistentWorkspace: "${env.DOCKER_VOLUMES}/deployments",
-    postCheckoutSteps: {
-        stage('Inject ESPHome Secrets') {
-            withCredentials([file(credentialsId: 'ESPHome secrets.yaml', variable: 'SECRETS_FILE')]) {
-                sh '''
-                    cp "$SECRETS_FILE" config/secrets.yaml
-                    chmod 600 config/secrets.yaml
-                '''
-            }
-        }
-    }
+    podmanSecretMappings: [
+        [
+            type: 'usernamePassword',
+            credentialsId: 'ESPHome',
+            podmanSecretUsernameName: 'esphome_username',
+            podmanSecretPasswordName: 'esphome_password'
+        ],
+        [
+            type: 'file',
+            credentialsId: 'ESPHome secrets.yaml',
+            podmanSecretFileName: 'esphome_secrets_yaml'
+        ]
+    ],
+    stagingExclusions: ['/images/', 'Jenkinsfile', 'LICENSE', 'README.md', 'renovate.json']
 )

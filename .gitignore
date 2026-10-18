@@ -1,6 +1,1 @@
 config/.esphome/
-config/secrets.yaml
-config/.gitignore
-.vscode/
-.pio/
-.env

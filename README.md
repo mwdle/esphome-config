@@ -1,6 +1,6 @@
-# ESPHome Configurations
+# ESPHome Configuration
 
-ESPHome Configurations and flashing instructions for Gosund, Sonoff, Daybetter, and Magic Home smart home devices as well as Espressif ESP8266 and ESP32 boards.
+A rootless Podman Quadlet configuration for ESPHome. Includes modular configurations for Gosund, Sonoff, Daybetter, and Magic Home IoT devices as well as Espressif ESP8266 and ESP32 boards.
 
 ## License
 

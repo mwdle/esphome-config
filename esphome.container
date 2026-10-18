@@ -1,0 +1,48 @@
+[Container]
+Image=ghcr.io/esphome/esphome:2026.9.1@sha256:776a845d508909bf426d2ee7bdd81796361ebe6a7f091807ce1d6d0b48985413
+ContainerName=esphome
+
+Network=host
+
+Secret=esphome_secrets_yaml,target=secrets.yaml,uid=1000,gid=1000,mode=0400
+Secret=esphome_username,type=env,target=ESPHOME_USERNAME
+Secret=esphome_password,type=env,target=ESPHOME_PASSWORD
+
+# read_only container fix for ESPHome 2026.8.0+
+Environment=CCACHE_DIR=/config/.esphome/ccache
+# https://github.com/esphome/issues/issues/3558
+Environment=PLATFORMIO_CORE_DIR=.platformio
+Environment=PLATFORMIO_GLOBALLIB_DIR=.platformioLibs
+Environment=TZ=America/Denver
+
+Volume=./config:/config:Z
+Volume=esphome-build:/config/.esphome:Z
+
+ReadOnly=true
+ReadOnlyTmpfs=false
+
+User=1000
+Group=1000
+UserNS=keep-id
+NoNewPrivileges=true
+DropCapability=all
+
+HealthStartupCmd=curl -fSs -o /dev/null http://localhost:6052/version -A "HealthCheck" || exit 1
+HealthStartupInterval=5s
+HealthStartupTimeout=5s
+HealthCmd=curl -fSs -o /dev/null http://localhost:6052/version -A "HealthCheck" || exit 1
+HealthInterval=30s
+HealthTimeout=30s
+HealthOnFailure=kill
+Notify=healthy
+
+Memory=2G
+PidsLimit=100
+
+[Service]
+CPUQuota=400%
+Restart=always
+RestartSec=5s
+
+[Install]
+WantedBy=default.target
