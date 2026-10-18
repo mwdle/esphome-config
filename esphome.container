@@ -23,7 +23,7 @@ ReadOnlyTmpfs=false
 
 User=1000
 Group=1000
-UserNS=keep-id
+UserNS=keep-id:size=1024
 NoNewPrivileges=true
 DropCapability=all
 
