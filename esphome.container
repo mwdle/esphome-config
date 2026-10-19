@@ -4,9 +4,9 @@ ContainerName=esphome
 
 Network=host
 
+Secret=esphome_password,type=env,target=ESPHOME_PASSWORD
 Secret=esphome_secrets_yaml,target=secrets.yaml,uid=1000,gid=1000,mode=0400
 Secret=esphome_username,type=env,target=ESPHOME_USERNAME
-Secret=esphome_password,type=env,target=ESPHOME_PASSWORD
 
 # read_only container fix for ESPHome 2026.8.0+
 Environment=CCACHE_DIR=/config/.esphome/ccache

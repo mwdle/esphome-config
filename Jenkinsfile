@@ -8,8 +8,8 @@ quadletPipeline(
         [
             type: 'usernamePassword',
             credentialsId: 'ESPHome',
-            podmanSecretUsernameName: 'esphome_username',
-            podmanSecretPasswordName: 'esphome_password'
+            podmanSecretPasswordName: 'esphome_password',
+            podmanSecretUsernameName: 'esphome_username'
         ],
         [
             type: 'file',
