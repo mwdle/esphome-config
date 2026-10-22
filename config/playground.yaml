@@ -20,7 +20,8 @@ light:
     name: "Display Brightness"
     output: backlight_pwm
     default_transition_length: 0s
-    restore_mode: ALWAYS_ON
+    initial_state:
+      state: ON
 
 # 1. Setup the SPI Bus (Shared by Display and Touch)
 spi:

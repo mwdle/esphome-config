@@ -18,7 +18,7 @@ light:
     red: ${output_red}
     green: ${output_green}
     blue: ${output_blue}
-    restore_mode: RESTORE_DEFAULT_OFF
+    restore_state: all
     effects:
       - lambda:
           name: "Color Wheel"
