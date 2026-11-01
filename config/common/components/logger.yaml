@@ -1,2 +1,3 @@
 logger:
-  baud_rate: 0 # disable UART logging
+  # UART logging is disabled by default. Some devices reserve the UART pins for real peripherals, so debug serial can be enabled per-device as needed
+  baud_rate: 0
