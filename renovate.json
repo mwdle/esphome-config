@@ -1,4 +1,25 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["local>lab/renovate-config"]
+  "extends": ["local>lab/renovate-config"],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["**/*.yaml", "**/*.yml"],
+      "matchStrings": [
+        "https://raw\\.githubusercontent\\.com/googlefonts/opensans/(?<currentDigest>[^/]+)/fonts/ttf/OpenSans-Regular\\.ttf"
+      ],
+      "depNameTemplate": "googlefonts/opensans",
+      "currentValueTemplate": "main",
+      "datasourceTemplate": "github-digest"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["**/*.yaml", "**/*.yml"],
+      "matchStrings": [
+        "https://raw\\.githubusercontent\\.com/Templarian/MaterialDesign-Webfont/(?<currentValue>[^/]+)/fonts/materialdesignicons-webfont\\.ttf"
+      ],
+      "depNameTemplate": "Templarian/MaterialDesign-Webfont",
+      "datasourceTemplate": "github-releases"
+    }
+  ]
 }
