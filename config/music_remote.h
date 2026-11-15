@@ -32,7 +32,7 @@ void draw_volume() {
 
 /**
  * Draws physical button icon representations on the display depending on the currently selected display page.
- * Includes icons for indicating the currently selected page (playback, playlist selection, or stats), as well as indicators for the physical buttons such page change, skip-previous, play/pause, skip-next, and volume sync/balance.
+ * Includes icons for indicating the currently selected page (playback, playlist selection, or stats), as well as indicators for page change, skip-previous, play/pause, skip-next, and shuffle state.
  * 
  * Takes up the bottom 18 pixels on the display and is meant to be rendered on every display page.
  */
@@ -50,7 +50,10 @@ void render_ui_controls() {
     else
         screen->print(63, 56, mdi_21, TextAlign::CENTER, "󰐊"); // play icon
     screen->print(89, 56, mdi_21, TextAlign::CENTER, "󰒭"); // skip-next icon
-    screen->print(115, 56, mdi_18, TextAlign::CENTER, "󱬐"); // volume-equal icon
+    if (media_shuffle->state)
+        screen->print(115, 56, mdi_18, TextAlign::CENTER, "󰒝"); // shuffle icon
+    else
+        screen->print(115, 55, mdi_20, TextAlign::CENTER, "󰒞"); // shuffle-disabled icon
 }
 
 /**

@@ -1,0 +1,6 @@
+packages:
+  - !include common/cast_1.yaml
+
+substitutions:
+  device_name: cast-1
+  friendly_name: CAST-1

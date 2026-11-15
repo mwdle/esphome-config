@@ -5,10 +5,7 @@ substitutions:
   device_name: music-remote
   friendly_name: Music Remote
   device_description: ESP8266-Based Remote for Music Assistant
-  # Both of the following media_player entities refer to the same physical media player, but behave differently because they are provided by different integrations in Home Assistant.
-  # Both are necessary to ensure that all media playback controls can function properly regardless of the current media source (e.g. Music Assistant, Spotify, Poweramp, etc).
-  media_player_mass: media_player.michael_s_speakers # Music Assistant integration provided media_player entity
-  media_player_direct: media_player.michael_s_speakers_direct # Google Cast integration provided media_player entity
+  music_assistant_player: media_player.cast_1
 
 esphome:
   # This configuration requires the music_remote.h file which contains implementation for all display rendering, playlist management, and more.
@@ -48,8 +45,8 @@ font:
     id: mdi_18
     size: 18
     glyphs: [
-        "󱬐", # volume-equal
         "󰕾", # volume-high
+        "󰒝", # shuffle
       ]
   - file:
       url: "https://raw.githubusercontent.com/Templarian/MaterialDesign-Webfont/master/fonts/materialdesignicons-webfont.ttf"
@@ -58,6 +55,7 @@ font:
     size: 20
     glyphs: [
         "󰲸", # playlist-music
+        "󰒞", # shuffle-disabled
       ]
   - file:
       url: "https://raw.githubusercontent.com/Templarian/MaterialDesign-Webfont/master/fonts/materialdesignicons-webfont.ttf"
@@ -109,7 +107,7 @@ display:
               data:
                 media_type: playlist
               data_template:
-                config_entry_id: "{{ config_entry_id('${media_player_mass}') }}"
+                config_entry_id: "{{ config_entry_id('${music_assistant_player}') }}"
               capture_response: true
               response_template: "{{ response['items'] | map(attribute='name') | list }}" # Map the JSON response from Music Assistant into a list of playlist names
               on_success:
@@ -158,7 +156,7 @@ binary_sensor:
               - homeassistant.action:
                   action: music_assistant.play_media
                   data:
-                    entity_id: ${media_player_mass} # Playlist selection is only available for the Music Assistant Integration provided player
+                    entity_id: ${music_assistant_player}
                     media_type: playlist
                     enqueue: replace
                   data_template:
@@ -190,57 +188,28 @@ binary_sensor:
           - OFF for at most 1s
           - ON for at least 0.05s
         then:
-          - if:
-              condition:
-                lambda: 'return id(media_source).state == "Music Assistant";'
-              then:
-                - homeassistant.action:
-                    action: media_player.media_previous_track
-                    data:
-                      entity_id: ${media_player_mass}
-              else:
-                - homeassistant.action:
-                    action: media_player.media_previous_track
-                    data:
-                      entity_id: ${media_player_direct}
+          - homeassistant.action:
+              action: media_player.media_previous_track
+              data:
+                entity_id: ${music_assistant_player}
       - timing: # on long press
           - OFF for at least 1.05s
         then:
-          - if:
-              condition:
-                lambda: 'return id(media_source).state == "Music Assistant";'
-              then:
-                - homeassistant.action:
-                    action: media_player.media_seek
-                    data:
-                      entity_id: ${media_player_mass} # Fast forward using the Music Assistant Integration provided player
-                    data_template:
-                      seek_position:
-                        >- # The media position attribute only updates when a song starts, ends, or when the user interacts with playback (e.g. scrubbing, play/pause, etc). Therefore, to determine the correct position, we need to compare the current time to the media_position_updated_at attribute.
-                        {% set new_position = (int((now() - state_attr("${media_player_mass}",
-                        "media_position_updated_at")).seconds + state_attr("${media_player_mass}",
-                        "media_position")) - 15) %} 
-                        {% if new_position >= 0 %} 
-                        {{ new_position }} 
-                        {% else %} 
-                        {{ 0 }} 
-                        {% endif %}
-              else:
-                - homeassistant.action:
-                    action: media_player.media_seek
-                    data:
-                      entity_id: ${media_player_direct} # Fast forward using Google Cast Integration provided player
-                    data_template:
-                      seek_position:
-                        >- # The media position attribute only updates when a song starts, ends, or when the user interacts with playback (e.g. scrubbing, play/pause, etc). Therefore, to determine the correct position, we need to compare the current time to the media_position_updated_at attribute.
-                        {% set new_position = (int((now() - state_attr("${media_player_direct}",
-                        "media_position_updated_at")).seconds + state_attr("${media_player_direct}",
-                        "media_position")) - 15) %} 
-                        {% if new_position >= 0 %} 
-                        {{ new_position }} 
-                        {% else %} 
-                        {{ 0 }} 
-                        {% endif %}
+          - homeassistant.action:
+              action: media_player.media_seek
+              data:
+                entity_id: ${music_assistant_player}
+              data_template:
+                seek_position:
+                  >- # Derive the current position because Home Assistant only updates the attribute after playback interactions.
+                  {% set new_position = (int((now() - state_attr("${music_assistant_player}",
+                  "media_position_updated_at")).seconds + state_attr("${music_assistant_player}",
+                  "media_position")) - 15) %}
+                  {% if new_position >= 0 %}
+                  {{ new_position }}
+                  {% else %}
+                  {{ 0 }}
+                  {% endif %}
   - platform: gpio
     internal: true
     pin:
@@ -253,7 +222,7 @@ binary_sensor:
       - homeassistant.action:
           action: media_player.media_play_pause
           data:
-            entity_id: ${media_player_mass} # Always play/pause on the Music Assistant Integration provided player to allow resuming the MA queue at player idle. Play/pause works correctly regardless of media source using the MA provided action.
+            entity_id: ${music_assistant_player}
   - platform: gpio
     internal: true
     pin:
@@ -261,33 +230,14 @@ binary_sensor:
       mode:
         input: true
         pullup: true
-    id: media_volume_sync
+    id: media_shuffle_toggle
     on_press:
       - homeassistant.action:
-          action:
-            script.sync_audio_group_volume # This is a custom Home Assistant script that synchronizes/balances the volume between my Chromecast Audio powered sound system and a Google Nest Mini which are paired in an audio group. See the HA YAML below:
-            # alias: Sync Audio Group Volume
-            # sequence:
-            #   - condition: template
-            #     value_template: >-
-            #       {% set volume_difference =
-            #       int(((state_attr("media_player.michael_s_nest_mini", "volume_level") -
-            #       state_attr("media_player.michael_s_speakers",
-            #       "volume_level"))*100)|abs|round(0)) %}
-            #       {{ volume_difference < 7 or volume_difference > 9 }}
-            #   - variables:
-            #       new_nest_mini_volume: >-
-            #         {% set new_volume = state_attr('media_player.michael_s_speakers',
-            #         'volume_level') + 0.08 %} {% if new_volume > 1 %} {{ 1.0 }} {% else %}
-            #         {{ new_volume }} {% endif %}
-            #   - metadata: {}
-            #     data:
-            #       volume_level: "{{ new_nest_mini_volume }}"
-            #     action: media_player.volume_set
-            #     target:
-            #       entity_id: media_player.michael_s_nest_mini
-            # description: ""
-            # icon: mdi:sync
+          action: media_player.shuffle_set
+          data:
+            entity_id: ${music_assistant_player}
+          data_template:
+            shuffle: "{{ not state_attr('${music_assistant_player}', 'shuffle') }}"
   - platform: gpio
     internal: true
     pin:
@@ -302,57 +252,34 @@ binary_sensor:
           - OFF for at most 1s
           - ON for at least 0.05s
         then:
-          - if:
-              condition:
-                lambda: 'return id(media_source).state == "Music Assistant";'
-              then:
-                - homeassistant.action:
-                    action: media_player.media_next_track
-                    data:
-                      entity_id: ${media_player_mass} # Skip using the Music Assistant Integration provided player
-              else:
-                - homeassistant.action:
-                    action: media_player.media_next_track
-                    data:
-                      entity_id: ${media_player_direct} # Skip using Google Cast Integration provided player
+          - homeassistant.action:
+              action: media_player.media_next_track
+              data:
+                entity_id: ${music_assistant_player}
       - timing: # on long press
           - OFF for at least 1.05s
         then:
-          - if:
-              condition:
-                lambda: 'return id(media_source).state == "Music Assistant";'
-              then:
-                - homeassistant.action:
-                    action: media_player.media_seek
-                    data:
-                      entity_id: ${media_player_mass} # Fast forward using the Music Assistant Integration provided player
-                    data_template:
-                      seek_position:
-                        >- # The media position attribute only updates when a song start, ends, or when the user interacts with playback (e.g. scrubbing, play/pause, etc). Therefore, to determine the correct position, we need to compare the current time to the media_position_updated_at attribute.
-                        {% set new_position = (int((now() - state_attr("${media_player_mass}",
-                        "media_position_updated_at")).seconds + state_attr("${media_player_mass}",
-                        "media_position")) + 15) %} 
-                        {% if new_position < state_attr("${media_player_mass}", "media_duration") %} 
-                        {{ new_position }} 
-                        {% else %} 
-                        {{ state_attr("${media_player_mass}", "media_duration") - 1 }} 
-                        {% endif %}
-              else:
-                - homeassistant.action:
-                    action: media_player.media_seek
-                    data:
-                      entity_id: ${media_player_direct} # Fast forward using Google Cast Integration provided player
-                    data_template:
-                      seek_position:
-                        >- # The media position attribute only updates when a song starts, ends, or when the user interacts with playback (e.g. scrubbing, play/pause, etc). Therefore, to determine the correct position, we need to compare the current time to the media_position_updated_at attribute.
-                        {% set new_position = (int((now() - state_attr("${media_player_direct}",
-                        "media_position_updated_at")).seconds + state_attr("${media_player_direct}",
-                        "media_position")) + 15) %} 
-                        {% if new_position < state_attr("${media_player_direct}", "media_duration") %} 
-                        {{ new_position }} 
-                        {% else %} 
-                        {{ state_attr("${media_player_direct}", "media_duration") - 1 }} 
-                        {% endif %}
+          - homeassistant.action:
+              action: media_player.media_seek
+              data:
+                entity_id: ${music_assistant_player}
+              data_template:
+                seek_position:
+                  >- # Derive the current position because Home Assistant only updates the attribute after playback interactions.
+                  {% set new_position = (int((now() - state_attr("${music_assistant_player}",
+                  "media_position_updated_at")).seconds + state_attr("${music_assistant_player}",
+                  "media_position")) + 15) %}
+                  {% if new_position < state_attr("${music_assistant_player}", "media_duration") %}
+                  {{ new_position }}
+                  {% else %}
+                  {{ state_attr("${music_assistant_player}", "media_duration") - 1 }}
+                  {% endif %}
+
+  - platform: homeassistant
+    id: media_shuffle
+    entity_id: ${music_assistant_player}
+    attribute: shuffle
+    internal: true
 
 sensor:
   - platform: rotary_encoder
@@ -380,7 +307,7 @@ sensor:
               - homeassistant.action:
                   action: media_player.volume_up
                   data:
-                    entity_id: ${media_player_mass} # Only adjust volume via the Music Assistant Integration provided player since it offers finer grain control compared to the Google Cast Integration provided player.
+                    entity_id: ${music_assistant_player}
     on_anticlockwise:
       then:
         - if:
@@ -392,13 +319,13 @@ sensor:
               - homeassistant.action:
                   action: media_player.volume_down
                   data:
-                    entity_id: ${media_player_mass} # Only adjust volume via the Music Assistant Integration provided player since it offers finer grain control compared to the Google Cast Integration provided player.
+                    entity_id: ${music_assistant_player}
     filters:
       - debounce: 10ms
     internal: true
   - platform: homeassistant
     id: media_volume
-    entity_id: ${media_player_direct}
+    entity_id: ${music_assistant_player}
     attribute: volume_level
     unit_of_measurement: "%"
     internal: true
@@ -406,20 +333,15 @@ sensor:
 text_sensor:
   - platform: homeassistant
     id: media_title
-    entity_id: ${media_player_direct} # Fetch the current media title directly from the Google Cast Integration provided player as it works regardless of media source.
+    entity_id: ${music_assistant_player}
     attribute: media_title
     internal: true
   - platform: homeassistant
     id: media_artist
-    entity_id: ${media_player_direct} # Fetch the current media artist directly from the Google Cast Integration provided player as it works regardless of media source.
+    entity_id: ${music_assistant_player}
     attribute: media_artist
     internal: true
   - platform: homeassistant
     id: media_status
-    entity_id: ${media_player_direct} # Fetch the current media status directly from the Google Cast Integration provided player as it works regardless of media source.
-    internal: true
-  - platform: homeassistant
-    id: media_source
-    entity_id: ${media_player_direct} # Fetch the current media source directly from the Google Cast Integration provided player as it works regardless of media source.
-    attribute: app_name
+    entity_id: ${music_assistant_player}
     internal: true
