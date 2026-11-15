@@ -1,5 +1,6 @@
 packages:
   - !include components/base.yaml
+  - !include components/internal_temperature_sensor.yaml
   - !include components/rgb_light.yaml
   - !include components/rgb_ir_remote.yaml
 

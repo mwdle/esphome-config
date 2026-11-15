@@ -3,6 +3,7 @@
 
 packages:
   - !include components/base.yaml
+  - !include components/internal_temperature_sensor.yaml
 
 substitutions:
   device_description: Apollo Automation CAST-1 audio receiver

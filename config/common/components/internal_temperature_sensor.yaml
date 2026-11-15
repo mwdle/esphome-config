@@ -1,0 +1,6 @@
+# Expose the microcontroller's die temperature for supported platforms
+sensor:
+  - platform: internal_temperature
+    id: internal_temperature_sensor
+    name: "Internal Temperature"
+    icon: mdi:thermometer

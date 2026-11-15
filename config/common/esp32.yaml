@@ -1,5 +1,6 @@
 packages:
   - !include components/base.yaml
+  - !include components/internal_temperature_sensor.yaml
 
 esp32:
   board: esp32dev
