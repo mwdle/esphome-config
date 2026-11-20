@@ -28,10 +28,9 @@ UserNS=keep-id:size=1024
 NoNewPrivileges=true
 DropCapability=all
 
-HealthStartupCmd=curl -fSs -o /dev/null http://localhost:6052/version -A "HealthCheck" || exit 1
+HealthCmd=curl -fSs -o /dev/null http://localhost:6052/version -A "HealthCheck" || exit 1
 HealthStartupInterval=5s
 HealthStartupTimeout=5s
-HealthCmd=curl -fSs -o /dev/null http://localhost:6052/version -A "HealthCheck" || exit 1
 HealthInterval=30s
 HealthTimeout=30s
 HealthOnFailure=kill
