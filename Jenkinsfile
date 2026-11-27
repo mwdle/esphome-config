@@ -8,7 +8,7 @@ quadletPipeline(
         ],
         [
             type: 'file',
-            credentialsId: 'ESPHome secrets.yaml',
+            credentialsId: 'esphome-secrets.yaml',
             podmanSecretFileName: 'esphome_secrets_yaml'
         ]
     ],
